@@ -1,5 +1,4 @@
 # README assets
 
-Place approved CareRobotics PNG assets here and reference them with relative links
-from the root README. The original Windows project directory is not mounted in
-this environment; no source image has been copied yet.
+`care-robotics.png` is the supplied CareRobotics logo, displayed in the root README.
+Keep image references relative so they work on GitHub and in local Markdown previews.

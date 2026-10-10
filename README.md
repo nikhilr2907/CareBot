@@ -1,12 +1,14 @@
 # CareBot
 
+![CareRobotics logo](docs/assets/care-robotics.png)
+
 CareBot is the ROS 2 robot workspace for **CareRobotics**, connecting navigation,
 sensing, station docking, and application commands with the robot's embedded
 controllers. The system is being developed to support supply delivery and
 pick-and-place workflows.
 
-The company introduction and brand assets will be aligned with the existing
-CareRobotics project README when that reference is available.
+The company introduction will be aligned with the existing CareRobotics project
+README when that reference is available.
 
 ## What this repository contains
 
