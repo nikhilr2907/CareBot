@@ -1,6 +1,6 @@
 {
   "name": "CareRobotics Dev Env",
-  "dockerComposeFile": "../docker-compose.yml",
+  "dockerComposeFile": "../docker/standard/docker-compose.yml",
   "service": "carerobot_dev",
   "workspaceFolder": "/workspace",
   "customizations": {

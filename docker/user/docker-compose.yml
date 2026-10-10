@@ -1,0 +1,33 @@
+# User override: combine with docker/standard/docker-compose.yml.
+# Load docker/user/.env explicitly with --env-file.
+# AI configuration mounts include personal instructions, skills and settings.
+services:
+  carerobot_dev:
+    volumes:
+      - type: bind
+        source: ${CODEX_HOST_DIR:?Set CODEX_HOST_DIR to your WSL .codex directory}
+        target: /root/.codex
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${CLAUDE_HOST_DIR:?Set CLAUDE_HOST_DIR to your WSL .claude directory}
+        target: /root/.claude
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${CLAUDE_HOST_CONFIG:?Set CLAUDE_HOST_CONFIG to your WSL .claude.json file}
+        target: /root/.claude.json
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${CARE_PROJECT_DIR:?Set CARE_PROJECT_DIR to the Windows project_code directory accessible from WSL}
+        target: /care_reference
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${CARE_PROJECT_DIR}/configs
+        target: /care_configs
+        read_only: true
+        bind:
+          create_host_path: false

@@ -6,3 +6,6 @@ __pycache__/
 .ros/
 *.bag
 *.db3
+
+# Local Docker mount paths and environment settings
+.env
