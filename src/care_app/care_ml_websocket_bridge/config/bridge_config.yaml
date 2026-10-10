@@ -45,4 +45,4 @@ care_ml_websocket_bridge:
     mqtt_broker_host: "localhost"
     mqtt_broker_port: 1883
     mqtt_topic_prefix: "care/weight"
-    env_config_path: "/care_configs/ilc_pilot_v1_care_robotics.json"
+    env_config_path: ""  # injected at launch via mock_and_bridge.launch.py

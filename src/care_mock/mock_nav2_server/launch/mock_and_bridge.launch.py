@@ -20,11 +20,12 @@ def generate_launch_description():
 
     mock_config = PathJoinSubstitution([mock_share, "config", "default.yaml"])
     bridge_config = PathJoinSubstitution([bridge_share, "config", "bridge_config.yaml"])
+    env_config = PathJoinSubstitution([mock_share, "config", "ilc_pilot_v1_care_robotics.json"])
 
     config_path_arg = DeclareLaunchArgument(
         "config_path",
-        default_value="/care_configs/ilc_pilot_v1_care_robotics.json",
-        description="Path inside the container to the CareRobotics environment JSON.",
+        default_value=env_config,
+        description="Path to the CareRobotics environment JSON.",
     )
 
     mock_node = Node(
@@ -45,7 +46,10 @@ def generate_launch_description():
         name="care_ml_websocket_bridge",
         output="screen",
         emulate_tty=True,
-        parameters=[bridge_config],
+        parameters=[
+            bridge_config,
+            {"env_config_path": LaunchConfiguration("config_path")},
+        ],
     )
 
     return LaunchDescription([
