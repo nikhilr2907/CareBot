@@ -39,3 +39,10 @@ care_ml_websocket_bridge:
     # Timeouts
     sensor_data_timeout: 30.0  # seconds before marking sensor data as stale
     nav2_action_server_timeout: 5.0  # seconds to wait for action server
+
+    # MQTT weight sensor inventory (set mqtt_enabled: true when ESP32s are live)
+    mqtt_enabled: false
+    mqtt_broker_host: "localhost"
+    mqtt_broker_port: 1883
+    mqtt_topic_prefix: "care/weight"
+    env_config_path: "/care_configs/ilc_pilot_v1_care_robotics.json"

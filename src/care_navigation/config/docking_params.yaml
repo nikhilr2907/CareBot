@@ -12,7 +12,7 @@ docking_server:
     base_frame: base_footprint
     fixed_frame: odom
     odom_topic: /odom
-    dock_database: /home/charvi/Care_Robotics_ROS/src/care_navigation/config/docks.yaml
+    dock_database: ""  # overridden at launch by care_nav2.launch.py
 
     # Dock instances are defined in docks.yaml. Each dock entry uses:
     #   type: care_tag_station

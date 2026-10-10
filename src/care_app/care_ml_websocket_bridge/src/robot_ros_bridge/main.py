@@ -53,8 +53,11 @@ def start_fastapi_server(node, host: str, port: int) -> None:
 
     async def run_server():
         """Run server with queue drainer"""
-        # Start queue drainer task
         loop.create_task(drain_outgoing_queue(node))
+
+        if node.config.get("mqtt_enabled"):
+            from .mqtt_inventory import mqtt_inventory_listener
+            loop.create_task(mqtt_inventory_listener(node, node.config))
 
         # Run uvicorn
         config = uvicorn.Config(

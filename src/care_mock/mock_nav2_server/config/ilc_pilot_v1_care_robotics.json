@@ -128,6 +128,32 @@
     "area_scaling_rule": "shelf_daily_demand = sku_daily_mean * location_demand_weight * school_period_multiplier * weekday_multiplier",
     "notes": "Shelf A is near main seating cluster and receives ~2x the foot traffic of Shelf B. Demand multipliers are relative weights, not additive."
   },
+  "skus": {
+    "SKU_ILC_001": {
+      "name": "Banana",
+      "category": "fruit",
+      "weight_per_unit_g": 150.0,
+      "_comment": "Mock value — average banana ~150g"
+    },
+    "SKU_ILC_002": {
+      "name": "Satsuma",
+      "category": "fruit",
+      "weight_per_unit_g": 80.0,
+      "_comment": "Mock value — average satsuma ~80g"
+    },
+    "SKU_ILC_003": {
+      "name": "Snack Bar",
+      "category": "snack",
+      "weight_per_unit_g": 45.0,
+      "_comment": "Mock value — typical cereal/snack bar ~45g"
+    },
+    "SKU_ILC_004": {
+      "name": "Water Bottle",
+      "category": "drink",
+      "weight_per_unit_g": 520.0,
+      "_comment": "Mock value — 500ml bottle ~520g including container"
+    }
+  },
   "nodes": [
     {
       "id": 0,

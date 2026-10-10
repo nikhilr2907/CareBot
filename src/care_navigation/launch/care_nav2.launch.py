@@ -44,6 +44,8 @@ def generate_launch_description():
     urdf_file = os.path.join(pkg_care_description, 'urdf', 'CareBot.urdf')
     world_file = os.path.join(pkg_care_navigation, 'worlds', 'simple_hallway.world')
     nav2_params_file = os.path.join(pkg_care_navigation, 'config', 'nav2_params.yaml')
+    docking_params_file = os.path.join(pkg_care_navigation, 'config', 'docking_params.yaml')
+    docks_file = os.path.join(pkg_care_navigation, 'config', 'docks.yaml')
     slam_config = os.path.join(pkg_care_navigation, 'config', 'slam_mapping_params.yaml')
     default_map_file = os.path.join(pkg_care_navigation, 'maps', 'school_room.yaml')
     rviz_config_file = os.path.join(pkg_care_navigation, 'rviz', 'care_bot_nav.rviz')
@@ -166,6 +168,26 @@ def generate_launch_description():
         ]
     )
 
+    # Docking server (delayed to allow Nav2 to finish starting)
+    docking_server = TimerAction(
+        period=10.0,
+        actions=[
+            Node(
+                package='opennav_docking',
+                executable='opennav_docking',
+                name='docking_server',
+                output='screen',
+                parameters=[
+                    docking_params_file,
+                    {
+                        'use_sim_time': use_sim_time,
+                        'dock_database': docks_file,
+                    },
+                ],
+            )
+        ]
+    )
+
     # RViz (delayed to allow Nav2 to start)
     rviz = TimerAction(
         period=12.0,
@@ -200,5 +222,6 @@ def generate_launch_description():
         slam_toolbox,
         localization,
         nav2_navigation,
+        docking_server,
         rviz,
     ])

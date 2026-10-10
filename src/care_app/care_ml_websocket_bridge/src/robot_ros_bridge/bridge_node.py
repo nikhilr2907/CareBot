@@ -9,8 +9,9 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Bool, Float32, Int32, String
 import asyncio
-import queue
 import json
+import os
+import queue
 from typing import Dict, Any, Optional, Callable
 
 from .task_state import TaskState
@@ -52,6 +53,11 @@ class BridgeNode(Node):
         self.declare_parameter("log_level", "INFO")
         self.declare_parameter("sensor_data_timeout", 30.0)
         self.declare_parameter("nav2_action_server_timeout", 5.0)
+        self.declare_parameter("mqtt_enabled", False)
+        self.declare_parameter("mqtt_broker_host", "localhost")
+        self.declare_parameter("mqtt_broker_port", 1883)
+        self.declare_parameter("mqtt_topic_prefix", "care/weight")
+        self.declare_parameter("env_config_path", "")
 
         # Get all parameters
         self.config = {
@@ -74,6 +80,13 @@ class BridgeNode(Node):
             "log_level": self.get_parameter("log_level").value,
             "sensor_data_timeout": self.get_parameter("sensor_data_timeout").value,
             "nav2_action_server_timeout": self.get_parameter("nav2_action_server_timeout").value,
+            "mqtt_enabled": self.get_parameter("mqtt_enabled").value,
+            "mqtt_broker_host": self.get_parameter("mqtt_broker_host").value,
+            "mqtt_broker_port": self.get_parameter("mqtt_broker_port").value,
+            "mqtt_topic_prefix": self.get_parameter("mqtt_topic_prefix").value,
+            "mqtt_shelf_config": self._load_shelf_config(
+                self.get_parameter("env_config_path").value
+            ),
         }
 
         # State management
@@ -179,6 +192,51 @@ class BridgeNode(Node):
         self.get_logger().info(
             f"BridgeNode initialized with config: {json.dumps(self.config, indent=2)}"
         )
+
+    def _load_shelf_config(self, path: str) -> dict:
+        """
+        Parse the environment config JSON into a shelf lookup keyed by str(node_id).
+        Merges per-SKU weight/category from the top-level 'skus' section with
+        per-location par_level/reorder_point/max_capacity from each node's inventory.
+        Returns: {str(node_id): {name, skus: {sku_id: {par_level, reorder_point,
+                                                         max_capacity, weight_per_unit_g,
+                                                         category, sku_name}}}}
+        """
+        if not path:
+            return {}
+        if not os.path.exists(path):
+            self.get_logger().warn(f"env_config_path not found: {path}")
+            return {}
+        try:
+            with open(path) as f:
+                env = json.load(f)
+
+            sku_defs = env.get("skus", {})
+            result = {}
+
+            for node in env.get("nodes", []):
+                node_id = str(node["id"])
+                node_skus = {}
+                for sku_id, inv in node.get("inventory", {}).items():
+                    sku_meta = sku_defs.get(sku_id, {})
+                    node_skus[sku_id] = {
+                        "par_level": inv.get("par_level", 0),
+                        "reorder_point": inv.get("reorder_point", 0),
+                        "max_capacity": inv.get("max_capacity", inv.get("initial_stock", 0)),
+                        "weight_per_unit_g": sku_meta.get("weight_per_unit_g", 0.0),
+                        "category": sku_meta.get("category", "unknown"),
+                        "sku_name": sku_meta.get("name", sku_id),
+                    }
+                result[node_id] = {"name": node.get("name", node_id), "skus": node_skus}
+
+            self.get_logger().info(
+                f"Loaded shelf config: {len(result)} nodes, "
+                f"{sum(len(v['skus']) for v in result.values())} SKU entries"
+            )
+            return result
+        except Exception as e:
+            self.get_logger().error(f"Failed to load env config: {e}")
+            return {}
 
     def set_websocket_command_handler(self, handler: Callable) -> None:
         """

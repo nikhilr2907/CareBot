@@ -20,6 +20,7 @@ setup(
         "uvicorn>=0.15.0",
         "websockets>=9.1",
         "pydantic>=1.8.2",
+        "aiomqtt>=1.0.0",
     ],
     zip_safe=True,
     maintainer="user",
