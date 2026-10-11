@@ -1,13 +1,9 @@
-# Pick-and-place controller integration
+# Pick-and-place ROS integration
 
-Empty ament CMake package reserved for integrating the separate pick-and-place
-STM32 controller. No runtime code, launch files or hardware protocol are defined.
+Ament CMake package reserved for the ROS adapter to the separate pick-and-place
+STM32 controller. It currently has no runtime code or launch files.
 
-The drive STM32 owns the motors and ToF sensors. This package is reserved for
-communication with the separate manipulator controller once its source and
-protocol are available.
-
-Import embedded source under `firmware/pick_place/`, preserving its build files
-and licenses. The eventual ROS C++ implementation will live in this package.
-Before implementation, establish connection settings, message framing, commands,
-acknowledgements, feedback, cancellation, errors and completion behavior.
+The imported embedded firmware and host control tools live in
+[firmware/pick_place](../../../firmware/pick_place/README.md), outside the ROS
+package. The STM32 application and ESP32 sensor nodes have their own embedded
+build configurations; they are not compiled by colcon.

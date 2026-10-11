@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111b20">
+  <title>Robot Conveyor Controls</title>
+  <link rel="stylesheet" href="/styles.css?v=20260914-21">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">RC</span><div><h1>Robot conveyor</h1><p id="serialPort">Waiting for Nucleo</p></div></div>
+    <section id="studyTimer" class="study-timer waiting" aria-label="Current trial timer">
+      <div class="study-timer-copy">
+        <span id="studyTimerLabel" aria-live="polite">Trial timer · ready</span>
+        <small id="studyTimerDetail">Waiting for a flagged trial</small>
+      </div>
+      <strong id="studyTimerValue">00:00.0</strong>
+    </section>
+    <div class="safety-controls">
+      <span id="connection" class="connection-pill offline">Disconnected</span>
+      <label class="arm-control"><input id="armToggle" type="checkbox"><span class="switch"></span><span><b>Enable motion</b><small>Locked by default</small></span></label>
+      <button id="stopButton" class="stop">■ STOP ALL</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="action-dock" aria-labelledby="actionDockTitle">
+      <div class="dock-heading"><div><span class="eyebrow">Defined movements</span><h2 id="actionDockTitle">Saved actions</h2></div><span class="pencil-only">✏ Configure with pencil</span></div>
+      <div id="actionStrip" class="action-strip"></div>
+      <p class="dock-help"><span class="edit-glyph">✏</span> The pencil is the only place that changes an action. Linked pairs share their main motion; Conveyor clamp curves can stay separate.</p>
+    </section>
+
+    <div id="safetyBanner" class="safety-banner locked" role="status"><i></i><strong id="safetyTitle">Motion locked</strong><span id="safetyDetail">Set up movements freely. Enable motion only when the area is clear.</span><span class="space-hint"><kbd>Space</kbd> emergency stop</span></div>
+
+    <section id="pausedRecovery" class="paused-recovery" aria-labelledby="pausedRecoveryTitle" hidden>
+      <div class="paused-recovery-copy">
+        <span>Stopped movement</span>
+        <strong id="pausedRecoveryTitle">Movement paused</strong>
+        <p id="pausedRecoveryDetail"></p>
+        <small id="pausedRecoveryHelp">Open-loop estimate: the robot has no stepper encoders. Both choices preserve every paired motor and any simultaneous clamp curve.</small>
+      </div>
+      <div class="paused-recovery-actions">
+        <button id="resumeMotion" class="primary">▶ Resume</button>
+        <button id="returnMotion">↶ Go back to start</button>
+      </div>
+    </section>
+
+    <div class="manual-layout">
+      <section class="panel manual-panel">
+        <div class="panel-heading"><div><span class="eyebrow">Temporary positioning</span><h2>Direct robot control</h2><p>Jog a pair or one motor into place. Every completed pulse is added to the counters.</p></div><span id="motionState" class="state-pill">Idle / locked</span></div>
+
+        <div class="manual-form">
+          <div class="manual-notice"><strong>Not saved to Actions</strong><span>Use these controls for initial positioning and testing. Only a pencil in Saved actions changes an action.</span></div>
+          <label class="target-field">What to control<select id="group">
+            <option value="mechanism">Side mechanisms · M1 + M6</option>
+            <option value="belts">Conveyor belts · M3 + M4</option>
+            <option value="m1">M1 only · physical right mechanism</option>
+            <option value="m6">M6 only · physical left mechanism</option>
+            <option value="m3">M3 only · conveyor belt</option>
+            <option value="m4">M4 only · conveyor belt</option>
+            <option value="m7">M7 only · geared X-axis angle</option>
+          </select></label>
+
+          <div id="presetField" class="preset-field"><span>Quick direction</span><div id="presetButtons" class="preset-buttons" role="group" aria-label="Quick direction"></div><select id="preset" hidden aria-label="Quick direction"></select></div>
+
+          <div id="mechanismSignalHint" class="mechanism-signal-hint">
+            <div><strong>Yesterday’s working signal</strong><span id="mechanismSignalComparison">The visible test used 20,000 pulses per motor at 4,000 Hz with no ramp.</span></div>
+            <button id="useBenchSignal" type="button">Load short matching signal</button>
+            <small>Loads 2,000 steps · 4,000 Hz · no ramp (0.5 seconds). It does not start movement.</small>
+          </div>
+
+          <div class="direction-row">
+            <label id="directionAField"><span id="motorALabel">M1 direction</span><select id="directionA"><option>F</option><option>R</option></select></label>
+            <label id="directionBField"><span id="motorBLabel">M6 direction</span><select id="directionB"><option>F</option><option>R</option></select></label>
+          </div>
+
+          <div class="number-grid">
+            <label class="unit-field">Steps<div><input id="steps" type="number" min="1" max="10000000" step="1" value="100"><b>steps</b></div></label>
+            <label class="unit-field">Speed<div><input id="maxHz" type="number" min="100" max="4000" step="1" value="300"><b>Hz</b></div></label>
+          </div>
+
+          <label class="ramp-field"><span><b>Linear speed ramp</b><small>Percentage of travel at each end</small></span><input id="ramp" type="range" min="0" max="45" step="5" value="20"><output id="rampValue">20%</output></label>
+
+          <div class="run-summary"><span>Manual command · not saved</span><strong id="movementSummary">Close / clamp · 100 steps · 300 Hz</strong><small id="duration">About 0.50 seconds</small></div>
+          <div class="run-buttons"><button id="runMotion" class="primary">▶ Move now</button><button id="runReverse">↶ Move opposite</button></div>
+
+          <section class="manual-lac" aria-labelledby="manualLacTitle">
+            <div><span class="eyebrow">Direct positioning · not saved</span><h3 id="manualLacTitle">Linear actuators</h3><p>Ramp the command signal to an absolute position for one LAC or both. This never changes a saved action.</p></div>
+            <label class="lac-speed-control">Actuator signal speed<div><input id="lacSpeed" type="number" min="2" max="100" step="1" value="25"><b>%/s</b></div><small>Percentage of the full command range per second—not measured physical speed. At 25%/s, a full 0→100% change takes 4 seconds.</small></label>
+            <div class="lac-grid">
+              <div><span>LAC 1 · left</span><strong id="lac1State">0%</strong><input id="lac1" type="number" min="0" max="100" value="0"><button data-lac="1">Move left</button></div>
+              <div><span>LAC 2 · right</span><strong id="lac2State">0%</strong><input id="lac2" type="number" min="0" max="100" value="0"><button data-lac="2">Move right</button></div>
+              <div><span>Both together</span><strong>Matched signal</strong><input id="lacBoth" type="number" min="0" max="100" value="0"><button data-lac="both" class="primary">Move both</button></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <aside class="panel counter-panel">
+        <div class="panel-heading compact"><div><span class="eyebrow">Open-loop odometer</span><h2>Commanded step totals</h2></div><button id="resetCounters" class="quiet">New session</button></div>
+        <p class="counter-warning">No motor encoders are fitted. These totals count requested pulses, not confirmed physical movement.</p>
+        <div class="counter-groups">
+          <div><span>Side mechanisms</span><div class="counter-pair"><b><small>M1 · right</small><em id="m1Steps">0</em></b><b><small>M6 · left</small><em id="m6Steps">0</em></b></div></div>
+          <div><span>Conveyor belts</span><div class="counter-pair"><b><small>M3</small><em id="m3Steps">0</em></b><b><small>M4</small><em id="m4Steps">0</em></b></div></div>
+          <div><span>Geared angle axis</span><div class="counter-pair"><b><small>M7</small><em id="m7Steps">0</em></b></div></div>
+        </div>
+        <p class="counter-key"><b>F</b> adds steps · <b>R</b> subtracts steps</p>
+
+        <div class="tof-inline"><div><span>Right ToF · D13/PA5</span><strong id="tofDistance">—</strong><small id="tofDetail">No reading yet</small></div><button id="readTof" class="icon-button" aria-label="Read ToF now">↻</button></div>
+
+        <div class="flag-box"><label>Flag label <input id="flagLabel" maxlength="100" placeholder="e.g. Box first touches belts"></label><button id="addFlag" class="flag-button">⚑ Flag these counters</button><small>Captures all four counters, ToF and LAC positions.</small></div>
+      </aside>
+    </div>
+
+    <section class="panel timeline-panel">
+      <div class="panel-heading"><div><span class="eyebrow">Step timeline</span><h2>Distance between flags</h2><p>Each connector shows the signed motor steps travelled from one flag to the next.</p></div><button id="clearFlags" class="quiet danger">Clear flags</button></div>
+      <div id="comparison" class="comparison empty-comparison">Place two flags to compare any two points.</div>
+      <div id="flagTimeline" class="timeline"><div class="empty-state"><span>⚑</span><strong>No flags yet</strong><p>Flag the counters before moving, then flag them again afterwards.</p></div></div>
+    </section>
+
+    <details class="panel utility-panel log-panel">
+      <summary><span><b>Action log</b><small>Everything is recorded automatically</small></span><span>Show log</span></summary>
+      <div class="utility-content"><p id="logPath" class="log-path"></p><div class="note-row"><input id="note" maxlength="1000" placeholder="Add an observation"><button id="addNote">Add note</button></div><div id="terminal" class="terminal" role="log"></div></div>
+    </details>
+  </main>
+
+  <dialog id="actionEditor">
+    <form method="dialog" class="editor-card">
+      <div class="editor-heading"><div><span class="eyebrow">Action settings</span><h2 id="editorTitle">Edit action</h2></div><button value="cancel" class="close-button" aria-label="Close">×</button></div>
+      <input id="editActionId" type="hidden">
+      <label>Button name<input id="editName" maxlength="100" required></label>
+      <div class="editor-grid">
+        <label id="editGroupField">Motor group<select id="editGroup"><option value="mechanism">Side mechanisms · M1 + M6</option><option value="belts">Conveyor belts · M3 + M4</option></select></label>
+        <label id="editPresetField">Movement<select id="editPreset"></select></label>
+        <label id="editStepsField">Target steps<input id="editSteps" type="number" min="1" max="10000000" step="1"><small>1–10,000,000 commanded steps</small></label>
+        <label id="editHzField">Speed · Hz<input id="editHz" type="number" min="100" max="4000" step="1"><small>Any whole number from 100–4,000 Hz · 4,000 is the Nucleo’s safe coordinated limit</small></label>
+        <label id="editRampField">Ramp · % each end<input id="editRamp" type="number" min="0" max="45" step="5"></label>
+        <section id="editMotorOffsets" class="motor-offset-editor" hidden>
+          <div><span>Continuous anti-slip trim</span><strong>Extra clamp accumulates across 100% of travel</strong><small>Both motors start and finish together. One side runs fractionally faster for the entire action, so the extra clamp is still being added at the end.</small></div>
+          <label>M1 · physical right extra steps<input id="editM1ExtraSteps" type="number" min="0" max="10000000" step="1"><small>Added to the base Target steps</small></label>
+          <label>M6 · physical left extra steps<input id="editM6ExtraSteps" type="number" min="0" max="10000000" step="1"><small>Added to the base Target steps</small></label>
+          <p id="motorOffsetSummary">Both motors use the base target. The speed-ramp setting above changes motor speed only.</p>
+        </section>
+        <section id="editorRampPreview" class="ramp-preview" aria-label="Speed ramp preview">
+          <div><span>Speed over commanded travel</span><strong id="editorRampSummary">Linear ramp</strong></div>
+          <svg viewBox="0 0 320 70" role="img" aria-label="Ramp speed graph">
+            <line x1="10" y1="60" x2="310" y2="60"></line><line x1="10" y1="8" x2="10" y2="60"></line>
+            <polyline id="editorRampLine" points="10,60 70,8 250,8 310,60"></polyline>
+          </svg>
+          <small id="editorRampDetail">20% accelerates, 60% runs at full speed, 20% decelerates.</small>
+          <div id="editorRuntime" class="editor-runtime"><span>Estimated full action time</span><strong id="editorEstimatedDuration">Calculating…</strong><small id="editorEstimateDetail">Includes the selected ramp and simultaneous clamp profile.</small></div>
+        </section>
+        <section id="clampProfileEditor" class="clamp-profile-editor" hidden>
+          <div class="clamp-profile-heading">
+            <div><span class="profile-eyebrow">Simultaneous support movement</span><h3>Clamping while the conveyor keeps moving</h3><p>M1/M6 clamp or release during the same time window as M3/M4 move the box.</p></div>
+            <label class="profile-toggle"><input id="clampProfileToggle" type="checkbox"><span>Use clamp profile</span></label>
+          </div>
+          <div id="clampProfileBody" class="clamp-profile-body">
+            <div class="clamp-profile-legend"><span><i class="belt-key"></i>Conveyor progress</span><span><i class="clamp-key"></i>Extra clamp position</span><strong id="clampProfileScale">±500 clamp steps</strong></div>
+            <div class="clamp-graph-wrap">
+              <svg id="clampProfileGraph" viewBox="0 0 720 250" role="img" aria-label="Extra clamp steps over conveyor travel">
+                <g class="clamp-grid">
+                  <line x1="58" y1="24" x2="700" y2="24"></line>
+                  <line x1="58" y1="72" x2="700" y2="72"></line>
+                  <line class="zero-line" x1="58" y1="120" x2="700" y2="120"></line>
+                  <line x1="58" y1="168" x2="700" y2="168"></line>
+                  <line x1="58" y1="216" x2="700" y2="216"></line>
+                </g>
+                <text x="8" y="29">Tighter</text><text x="27" y="124">0</text><text x="10" y="220">Wider</text>
+                <text x="58" y="243">0</text><text id="clampGraphEndLabel" x="700" y="243" text-anchor="end">2,000 conveyor steps</text>
+                <polyline id="clampProfileLine" points="58,120 700,120"></polyline>
+                <g id="clampProfileMarkers"></g>
+              </svg>
+              <small>Click the graph to add a point, or drag a point. A flat line holds; a slope changes clamping linearly.</small>
+            </div>
+            <div id="clampProfileRows" class="clamp-profile-rows" aria-label="Clamp profile points"></div>
+            <div class="clamp-profile-tools"><button id="addClampPoint" type="button">＋ Add control point</button><span id="clampProfileSummary">No clamping change.</span></div>
+            <div id="clampPairOptions" class="clamp-pair-options">
+              <div><span>Paired conveyor curve</span><strong id="clampPairName">Conveyor: box in</strong><small>Conveyor distance, speed and direction remain paired. Choose separately what happens to this purple curve.</small></div>
+              <button id="copyClampFromPair" type="button">Copy its reverse into this editor</button>
+              <label><input id="syncClampToPair" type="checkbox"><span><strong>Update both when saving</strong><small>Replace the paired curve with the exact reverse of this one.</small></span></label>
+            </div>
+            <p class="clamp-profile-warning"><strong>Position, not measured force:</strong> positive steps command Clamp (M1 R + M6 R); negative changes command Release (M1 F + M6 F). Both systems run simultaneously. A steep curve slows the conveyor enough to keep clamping at or below 4,000 Hz. There is no load cell.</p>
+          </div>
+        </section>
+        <section id="lacEditorFields" class="lac-action-editor" hidden>
+          <div><span>Current commanded positions</span><strong id="editorLacCurrent">LAC1 0% · LAC2 0%</strong></div>
+          <label>Target for LAC1 + LAC2<input id="editLacPercent" type="number" min="0" max="100" step="1"><small>Absolute percentage · conveyor motors are not started</small></label>
+          <label>Actuator signal speed<input id="editLacSpeed" type="number" min="2" max="100" step="1"><small>% of full command range per second · not measured mm/s</small></label>
+          <div class="lac-support-editor">
+            <div class="lac-support-heading"><span>Anti-slip clamp support</span><strong id="lacSupportSummary">+300 clamp steps across 100%</strong><small>Runs M1 R + M6 R for the full actuator action. Clamp position rises continuously from 0 to +300; it does not fall or release at the end.</small></div>
+            <label>Clamp steps per run<input id="editLacClampSteps" type="number" min="0" max="10000000" step="1"><small>300 by default · set 0 to disable</small></label>
+            <label>Maximum pulse speed<input id="editLacClampHz" type="number" min="100" max="4000" step="1"><small>Hz cap · timing is stretched to the full action</small></label>
+            <div class="lac-support-coverage"><span>Clamp coverage</span><strong>100% of action</strong><small>Monotonic linear accumulation · no speed-ramp falloff</small></div>
+          </div>
+        </section>
+        <section id="editTofField" class="tof-editor">
+          <div class="tof-editor-heading"><div><span>Live working right ToF</span><strong id="editorLiveTof">Reading…</strong><small id="editorLiveTofDetail">D13/PA5 · physical right</small></div><button id="refreshEditorTof" type="button">↻ Read now</button></div>
+          <div class="tof-live-values" aria-label="Live ToF diagnostics">
+            <div><span>Raw response</span><strong id="editorTofRaw">—</strong></div>
+            <div><span>Samples</span><strong id="editorTofSamples">—</strong></div>
+            <div><span>Errors</span><strong id="editorTofErrors">—</strong></div>
+            <div><span>Last reply</span><strong id="editorTofUpdated">Waiting…</strong></div>
+          </div>
+          <label>How should this action use ToF?<select id="editTofMode"><option value="unspecified">Unspecified — record only</option><option value="range">Use a finish range</option><option value="not_applicable">Not applicable</option></select></label>
+          <div id="tofRangeFields" class="tof-range-fields">
+            <label>Minimum · mm<input id="editTofMin" type="number" min="20" max="4000" step="1" placeholder="e.g. 410"></label>
+            <label>Ideal / midpoint · mm<input id="editTofIdeal" type="number" min="20" max="4000" step="1" placeholder="e.g. 420"></label>
+            <label>Maximum · mm<input id="editTofMax" type="number" min="20" max="4000" step="1" placeholder="e.g. 430"></label>
+          </div>
+          <button id="captureTof" type="button" class="use-reading-button">Use current valid reading as ideal</button>
+        </section>
+      </div>
+      <p id="pairHelp" class="pair-help"></p>
+      <div class="demo-zone">
+        <div class="demo-readout"><span>Applied demo position</span><strong id="demoPosition">0 steps from start</strong><small id="demoDelta">Enter a target, then move only the difference.</small></div>
+        <div id="demoTofResult" class="demo-tof-result">Each demo records ToF before and after movement.</div>
+        <div class="demo-buttons"><button id="demoTarget" type="button" class="primary">▶ Demo target</button><button id="demoZero" type="button">↶ Return to 0</button></div>
+        <button id="rebaseDemo" type="button" class="rebase-button">Use the robot’s current position as the new 0</button>
+      </div>
+      <p id="tofReferenceHelp" class="editor-help">The range checks the finish reading; it does not stop movement. Step count remains the movement limit.</p>
+      <label>Notes<textarea id="editInstructions" maxlength="1000" rows="3" placeholder="Starting position, box type, expected result…"></textarea></label>
+      <div class="editor-actions"><button id="deleteAction" type="button" class="danger">Delete</button><span></span><button value="cancel">Cancel</button><button id="saveEditedAction" type="button" class="primary">Save action</button></div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status"></div>
+  <script src="/app.js?v=20260914-27"></script>
+</body>
+</html>

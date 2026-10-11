@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lift Calibration</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <h1>Lift Calibration</h1>
+      <p id="serialPort" class="subtle">Waiting for STM32</p>
+    </div>
+    <div class="header-actions">
+      <span id="connectionBadge" class="status-badge disconnected">Disconnected</span>
+      <label class="arm-toggle">
+        <input id="armToggle" type="checkbox">
+        <span>Armed</span>
+      </label>
+      <button id="stopButton" class="stop-button" type="button" title="Stop all stepper motors">
+        <span aria-hidden="true">&#9632;</span>
+        Stop all
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="control-band" aria-labelledby="trialHeading">
+      <div class="section-heading">
+        <div>
+          <h2 id="trialHeading">Timed Trial</h2>
+          <p id="contextLabel" class="subtle">UP:00-20</p>
+        </div>
+        <div id="motionState" class="motion-state">Idle</div>
+      </div>
+
+      <div class="settings-grid">
+        <label>
+          <span>Approximate height</span>
+          <div class="number-unit">
+            <input id="heightInput" type="number" min="0" max="100" step="1" value="0">
+            <span>%</span>
+          </div>
+        </label>
+        <label>
+          <span>Base speed</span>
+          <div class="number-unit">
+            <input id="speedInput" type="number" min="300" max="4000" step="100" value="1000">
+            <span>Hz</span>
+          </div>
+        </label>
+        <label>
+          <span>Trial duration</span>
+          <div class="number-unit">
+            <input id="durationInput" type="number" min="100" max="3000" step="100" value="1000">
+            <span>ms</span>
+          </div>
+        </label>
+        <label class="trim-control">
+          <span>Relative trim</span>
+          <input id="trimInput" type="range" min="-30" max="30" step="2.5" value="0">
+          <div class="range-labels">
+            <span>Left favoured</span>
+            <strong id="trimValue">0%</strong>
+            <span>Right favoured</span>
+          </div>
+        </label>
+      </div>
+
+      <div class="speed-readout" aria-live="polite">
+        <div><span>M2 right</span><strong id="m2Speed">1000 Hz</strong></div>
+        <div><span>M5 left</span><strong id="m5Speed">1000 Hz</strong></div>
+        <div><span>Learned trials</span><strong id="learnedTrials">0</strong></div>
+        <div><span>Smooth results</span><strong id="smoothTrials">0</strong></div>
+      </div>
+
+      <div class="primary-actions">
+        <button id="runUp" class="motion-button up" type="button">
+          <span aria-hidden="true">&#8593;</span>
+          Run up
+        </button>
+        <button id="runDown" class="motion-button down" type="button">
+          <span aria-hidden="true">&#8595;</span>
+          Run down
+        </button>
+      </div>
+    </section>
+
+    <section class="feedback-band" aria-labelledby="feedbackHeading">
+      <div class="section-heading">
+        <div>
+          <h2 id="feedbackHeading">Observation</h2>
+          <p id="feedbackTiming" class="subtle">No trial selected</p>
+        </div>
+      </div>
+      <div class="feedback-actions">
+        <button data-feedback="smooth" class="feedback-button smooth" type="button">Smooth</button>
+        <button data-feedback="left_stall" class="feedback-button warning" type="button">Left stalled</button>
+        <button data-feedback="right_stall" class="feedback-button warning" type="button">Right stalled</button>
+        <button data-feedback="both_stall" class="feedback-button danger" type="button">Both stalled</button>
+        <button data-feedback="vibration" class="feedback-button vibration" type="button">Vibration</button>
+      </div>
+      <label class="note-field">
+        <span>Note</span>
+        <input id="noteInput" type="text" maxlength="300" placeholder="Optional observation">
+      </label>
+      <p id="recommendationText" class="recommendation">No learned adjustment for this height band yet.</p>
+    </section>
+
+    <section class="jog-band" aria-labelledby="jogHeading">
+      <div class="section-heading">
+        <div>
+          <h2 id="jogHeading">Individual Jog</h2>
+          <p class="subtle">M2 is right; M5 is left</p>
+        </div>
+        <div class="jog-settings">
+          <label>
+            <span>Speed</span>
+            <input id="jogSpeed" type="number" min="300" max="2000" step="100" value="500">
+          </label>
+          <label>
+            <span>Duration</span>
+            <input id="jogDuration" type="number" min="100" max="1000" step="50" value="250">
+          </label>
+        </div>
+      </div>
+      <div class="jog-grid">
+        <div class="jog-side">
+          <strong>M5 left</strong>
+          <button data-jog-side="left" data-jog-direction="UP" type="button" title="Jog M5 upward">&#8593;</button>
+          <button data-jog-side="left" data-jog-direction="DOWN" type="button" title="Jog M5 downward">&#8595;</button>
+        </div>
+        <div class="jog-side">
+          <strong>M2 right</strong>
+          <button data-jog-side="right" data-jog-direction="UP" type="button" title="Jog M2 upward">&#8593;</button>
+          <button data-jog-side="right" data-jog-direction="DOWN" type="button" title="Jog M2 downward">&#8595;</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="history-band" aria-labelledby="historyHeading">
+      <div class="section-heading">
+        <div>
+          <h2 id="historyHeading">Recent Activity</h2>
+          <p id="logPath" class="subtle"></p>
+        </div>
+      </div>
+      <div class="history-layout">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Motion</th>
+                <th>M2</th>
+                <th>M5</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody id="trialRows">
+              <tr><td colspan="5" class="empty-state">No trials recorded</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="terminal" class="terminal" role="log" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="assertive"></div>
+  <script src="/app.js"></script>
+</body>
+</html>

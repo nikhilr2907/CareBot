@@ -13,6 +13,7 @@ ROS package names and existing paths remain unchanged.
 | Localization | `care_localization/*` | Package scaffolds; active localization is launched by care_navigation |
 | Navigation | `care_navigation` | Gazebo, mapping, saved-map localization, Nav2 and docking configuration |
 | Docking dependency | `opennav_docking` | Empty reserved directory; docking dependency must be supplied |
+| Embedded control | `firmware/pick_place/` | STM32/ESP32 firmware, control tools, hardware notes and archived prototypes |
 | Manipulation | `care_manipulation/care_pick_place_bridge` | Empty C++ package scaffold for a separate pick-and-place STM32 |
 | Application | `care_app/care_ml_websocket_bridge` | ML WebSocket commands, navigation/docking actions and telemetry |
 | Mock system | `care_mock/mock_nav2_server` | Simulated navigation and inventory for application integration |
@@ -25,9 +26,9 @@ separate device with its own serial connection and firmware. Neither bridge
 should open the other controller's port. Use stable `/dev/serial/by-id/` device
 paths rather than relying on changing ttyACM numbering.
 
-Firmware remains outside ROS packages. When importing controller source, use
-`firmware/drive/` and `firmware/pick_place/`, preserving their build files and
-licenses. Do not put embedded firmware into a ROS node's `src/` directory.
+Firmware remains outside ROS packages. Pick-and-place source lives under `firmware/pick_place/`, with its build files
+and vendor licences. `firmware/COLCON_IGNORE` excludes embedded projects from
+the ROS build. A future drive firmware import belongs under `firmware/drive/`. Do not put embedded firmware into a ROS node's `src/` directory.
 
 ## Development entry points
 

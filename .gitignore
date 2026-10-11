@@ -9,3 +9,25 @@ __pycache__/
 
 # Local Docker mount paths and environment settings
 .env
+
+# Embedded builds, imported OS metadata and local control sessions
+*:Zone.Identifier
+.DS_Store
+src/care_manipulation/care_pick_place_bridge/firmware/**/.pio/
+src/care_manipulation/care_pick_place_bridge/firmware/**/CMakeFiles/
+src/care_manipulation/care_pick_place_bridge/firmware/**/CMakeCache.txt
+src/care_manipulation/care_pick_place_bridge/firmware/**/cmake_install.cmake
+src/care_manipulation/care_pick_place_bridge/firmware/**/compile_commands.json
+src/care_manipulation/care_pick_place_bridge/firmware/**/*.o
+src/care_manipulation/care_pick_place_bridge/firmware/**/*.obj
+src/care_manipulation/care_pick_place_bridge/firmware/**/*.a
+src/care_manipulation/care_pick_place_bridge/firmware/**/*.elf
+src/care_manipulation/care_pick_place_bridge/firmware/**/*.hex
+src/care_manipulation/care_pick_place_bridge/firmware/**/*.bin
+src/care_manipulation/care_pick_place_bridge/firmware/**/*.map
+src/care_manipulation/care_pick_place_bridge/firmware/**/*.list
+src/care_manipulation/care_pick_place_bridge/firmware/**/*.su
+src/care_manipulation/care_pick_place_bridge/firmware/**/.venv/
+src/care_manipulation/care_pick_place_bridge/firmware/**/venv/
+src/care_manipulation/care_pick_place_bridge/dev_tools/robot_control/data/
+src/care_manipulation/care_pick_place_bridge/dev_tools/lift_calibrator/data/

@@ -75,6 +75,7 @@ Nav2 configuration and docking configuration.
 | `src/care_app/` | Care ML WebSocket bridge and robot telemetry |
 | `src/care_navigation/` | Navigation, mapping, localization and docking configuration |
 | `src/care_bridge/` | Drive and ToF serial bridges |
+| `firmware/pick_place/` | STM32 and ESP32 controller source and host control tools |
 | `src/care_manipulation/` | C++ package scaffold for pick-and-place integration |
 | `src/care_description/` | Robot URDF, meshes and sensor frames |
 | `src/care_april_tag_detection/` | Camera calibration and AprilTag detection |
