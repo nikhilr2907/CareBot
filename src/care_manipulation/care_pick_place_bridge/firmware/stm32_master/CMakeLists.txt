@@ -27,10 +27,15 @@ set(CMAKE_CXX_EXTENSIONS ON)
 add_executable(${PROJECT_NAME}
     Core/Src/bld515c.c
     Core/Src/bno055.c
+    Core/Src/cli_app.c
+    Core/Src/debug.c
+    Core/Src/direct_tof_app.c
+    Core/Src/drive_app.c
     Core/Src/hx711_parallel.c
     Core/Src/lac_actuators.c
     Core/Src/main.c
     Core/Src/motors.c
+    Core/Src/sensor_node_app.c
     Core/Src/stm32f4xx_hal_msp.c
     Core/Src/stm32f4xx_it.c
     Core/Src/system_stm32f4xx.c
